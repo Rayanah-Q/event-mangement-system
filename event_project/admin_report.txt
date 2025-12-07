@@ -1,0 +1,15 @@
+==== EVENT MANAGEMENT SYSTEM REPORT ====
+
+Users per Role:
+- ADMIN: 1
+- ORGANIZER: 3
+- ATTENDEE: 4
+
+Total Events: 4
+
+Total Registrations: 1
+
+Most Popular Event: Java Workshop (1 registrations)
+
+Top Category: Workshop (1 events)
+
