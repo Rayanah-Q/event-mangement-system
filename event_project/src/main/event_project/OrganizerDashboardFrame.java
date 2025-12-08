@@ -9,9 +9,9 @@ import java.sql.*;
 public class OrganizerDashboardFrame extends JFrame {
 
     private JTable eventTable, attendeeTable;
-    private JButton refreshEventsBtn, addEventBtn, editEventBtn, deleteEventBtn, loadAttendeesBtn;
+    private JButton refreshEventsBtn, addEventBtn, editEventBtn, deleteEventBtn, loadAttendeesBtn, logoutBtn;
 
-    private int organizerId;  // نجيبه من LoginFrame
+    private int organizerId;
 
     public OrganizerDashboardFrame(int organizerId) {
 
@@ -20,22 +20,33 @@ public class OrganizerDashboardFrame extends JFrame {
         setTitle("Organizer Dashboard");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        getContentPane().setBackground(Color.decode("#debee6"));
 
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setBackground(Color.decode("#debee6"));
+        tabs.setFont(new Font("Tahoma", Font.ITALIC, 12));
 
-        // -------------------------
         // EVENTS TAB
-        // -------------------------
         JPanel eventsPanel = new JPanel(new BorderLayout());
+        eventsPanel.setBackground(Color.decode("#debee6"));
 
         eventTable = new JTable();
+        eventTable.setBackground(Color.decode("#f1ebf2"));
+        eventTable.setFont(new Font("Tahoma", Font.ITALIC, 12));
+        eventTable.getTableHeader().setBackground(Color.decode("#debee6"));
+        eventTable.getTableHeader().setFont(new Font("Tahoma", Font.ITALIC, 12));
         JScrollPane eventScroll = new JScrollPane(eventTable);
 
         JPanel eventBtns = new JPanel();
+        eventBtns.setBackground(Color.decode("#debee6"));
         refreshEventsBtn = new JButton("Refresh Events");
+        styleButton(refreshEventsBtn);
         addEventBtn = new JButton("Add Event");
+        styleButton(addEventBtn);
         editEventBtn = new JButton("Edit Event");
+        styleButton(editEventBtn);
         deleteEventBtn = new JButton("Delete Event");
+        styleButton(deleteEventBtn);
 
         eventBtns.add(refreshEventsBtn);
         eventBtns.add(addEventBtn);
@@ -47,16 +58,21 @@ public class OrganizerDashboardFrame extends JFrame {
 
         tabs.add("My Events", eventsPanel);
 
-        // -------------------------
         // ATTENDEES TAB
-        // -------------------------
         JPanel attendeesPanel = new JPanel(new BorderLayout());
+        attendeesPanel.setBackground(Color.decode("#debee6"));
 
         attendeeTable = new JTable();
+        attendeeTable.setBackground(Color.decode("#f1ebf2"));
+        attendeeTable.setFont(new Font("Tahoma", Font.ITALIC, 12));
+        attendeeTable.getTableHeader().setBackground(Color.decode("#debee6"));
+        attendeeTable.getTableHeader().setFont(new Font("Tahoma", Font.ITALIC, 12));
         JScrollPane attendeeScroll = new JScrollPane(attendeeTable);
 
         JPanel attendeeBtns = new JPanel();
+        attendeeBtns.setBackground(Color.decode("#debee6"));
         loadAttendeesBtn = new JButton("Load Attendees");
+        styleButton(loadAttendeesBtn);
         attendeeBtns.add(loadAttendeesBtn);
 
         attendeesPanel.add(attendeeScroll, BorderLayout.CENTER);
@@ -64,7 +80,18 @@ public class OrganizerDashboardFrame extends JFrame {
 
         tabs.add("Event Attendees", attendeesPanel);
 
-        add(tabs);
+        // LOGOUT BUTTON
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(Color.decode("#debee6"));
+        logoutBtn = new JButton("Logout");
+        styleButton(logoutBtn);
+        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        logoutPanel.setBackground(Color.decode("#debee6"));
+        logoutPanel.add(logoutBtn);
+        topPanel.add(logoutPanel, BorderLayout.NORTH);
+        topPanel.add(tabs, BorderLayout.CENTER);
+
+        add(topPanel);
 
         // ACTIONS
         refreshEventsBtn.addActionListener(e -> loadEvents());
@@ -72,6 +99,7 @@ public class OrganizerDashboardFrame extends JFrame {
         editEventBtn.addActionListener(e -> editEvent());
         deleteEventBtn.addActionListener(e -> deleteEvent());
         loadAttendeesBtn.addActionListener(e -> loadAttendees());
+        logoutBtn.addActionListener(e -> logout());
 
         loadEvents();
 
@@ -79,20 +107,30 @@ public class OrganizerDashboardFrame extends JFrame {
         setVisible(true);
     }
 
-    // helper
+    private void styleButton(JButton btn) {
+        btn.setBackground(Color.decode("#f1ebf2"));
+        btn.setFont(new Font("Tahoma", Font.ITALIC, 12));
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to logout?",
+                "Logout Confirmation",
+                JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            new Log_sginup();
+            dispose();
+        }
+    }
+
     private boolean isNullOrEmpty(String s) {
         return s == null || s.trim().isEmpty();
     }
 
     private boolean isValidDateFormat(String date) {
-        // فحص بسيط لصيغة YYYY-MM-DD HH:MM:SS
-        // ما هو perfect بس يكفي للمشروع
         return date.matches("\\d{4}-\\d{2}-\\d{2}.*");
     }
 
-    // ---------------------
-    // LOAD EVENTS
-    // ---------------------
     private void loadEvents() {
         DefaultTableModel model = new DefaultTableModel(
                 new String[]{"ID", "Title", "Category", "Location", "Date", "Capacity"}, 0
@@ -125,9 +163,6 @@ public class OrganizerDashboardFrame extends JFrame {
         }
     }
 
-    // ---------------------
-    // ADD EVENT
-    // ---------------------
     private void addEvent() {
 
         String title = JOptionPane.showInputDialog(this, "Event Title:");
@@ -136,20 +171,17 @@ public class OrganizerDashboardFrame extends JFrame {
         String date = JOptionPane.showInputDialog(this, "Event Date (YYYY-MM-DD HH:MM:SS):");
         String capacity = JOptionPane.showInputDialog(this, "Capacity:");
 
-        // لو المستخدم ضغط Cancel في أي وحدة
         if (title == null || category == null || location == null || date == null || capacity == null) {
             JOptionPane.showMessageDialog(this, "Operation cancelled.", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
-        // إزالة المسافات
         title = title.trim();
         category = category.trim();
         location = location.trim();
         date = date.trim();
         capacity = capacity.trim();
 
-        // فحص الحقول الفارغة
         if (title.isEmpty() || category.isEmpty() || location.isEmpty() || date.isEmpty() || capacity.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "All fields are required (no empty values).",
@@ -158,7 +190,6 @@ public class OrganizerDashboardFrame extends JFrame {
             return;
         }
 
-        // طول النصوص (بس فحص بسيط)
         if (title.length() > 100 || category.length() > 100 || location.length() > 100) {
             JOptionPane.showMessageDialog(this,
                     "Title, Category, and Location must be less than 100 characters.",
@@ -167,7 +198,6 @@ public class OrganizerDashboardFrame extends JFrame {
             return;
         }
 
-        // فحص صيغة التاريخ بشكل مبدئي
         if (!isValidDateFormat(date)) {
             JOptionPane.showMessageDialog(this,
                     "Please enter date in format: YYYY-MM-DD HH:MM:SS",
@@ -195,7 +225,6 @@ public class OrganizerDashboardFrame extends JFrame {
             return;
         }
 
-        // إدخال في الداتابيس
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "INSERT INTO events (title, category, location, event_date, seat_capacity, organizer_id) VALUES (?, ?, ?, ?, ?, ?)"
@@ -221,9 +250,6 @@ public class OrganizerDashboardFrame extends JFrame {
         }
     }
 
-    // ---------------------
-    // EDIT EVENT
-    // ---------------------
     private void editEvent() {
 
         int row = eventTable.getSelectedRow();
@@ -243,7 +269,6 @@ public class OrganizerDashboardFrame extends JFrame {
         String date = JOptionPane.showInputDialog(this, "New Date (YYYY-MM-DD HH:MM:SS):", eventTable.getValueAt(row, 4));
         String capacity = JOptionPane.showInputDialog(this, "New Capacity:", eventTable.getValueAt(row, 5));
 
-        // لو المستخدم لغى أي وحدة
         if (title == null || category == null || location == null || date == null || capacity == null) {
             JOptionPane.showMessageDialog(this, "Operation cancelled.", "Info", JOptionPane.INFORMATION_MESSAGE);
             return;
@@ -323,9 +348,6 @@ public class OrganizerDashboardFrame extends JFrame {
         }
     }
 
-    // ---------------------
-    // DELETE EVENT
-    // ---------------------
     private void deleteEvent() {
         int row = eventTable.getSelectedRow();
         if (row == -1) {
@@ -350,14 +372,12 @@ public class OrganizerDashboardFrame extends JFrame {
 
         try (Connection con = DBConnection.getConnection()) {
 
-            // أولاً نحذف التسجيلات المرتبطة
             try (PreparedStatement psReg = con.prepareStatement(
                     "DELETE FROM registrations WHERE event_id = ?")) {
                 psReg.setInt(1, id);
                 psReg.executeUpdate();
             }
 
-            // بعدين نحذف الفعالية نفسها
             try (PreparedStatement psEvt = con.prepareStatement(
                     "DELETE FROM events WHERE event_id = ?")) {
                 psEvt.setInt(1, id);
@@ -376,9 +396,6 @@ public class OrganizerDashboardFrame extends JFrame {
         }
     }
 
-    // ---------------------
-    // LOAD ATTENDEES
-    // ---------------------
     private void loadAttendees() {
 
         int row = eventTable.getSelectedRow();

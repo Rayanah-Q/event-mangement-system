@@ -9,7 +9,7 @@ public class AttendeeDashboardFrame extends JFrame {
 
     private int attendeeId;
     private JTable eventsTable, ticketsTable;
-    private JButton registerBtn, cancelBtn, refreshEventsBtn, refreshTicketsBtn, viewTicketBtn;
+    private JButton registerBtn, cancelBtn, refreshEventsBtn, refreshTicketsBtn, viewTicketBtn, logoutBtn;
 
     public AttendeeDashboardFrame(int attendeeId) {
         this.attendeeId = attendeeId;
@@ -17,18 +17,29 @@ public class AttendeeDashboardFrame extends JFrame {
         setTitle("Attendee Dashboard");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        getContentPane().setBackground(Color.decode("#debee6"));
 
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setBackground(Color.decode("#debee6"));
+        tabs.setFont(new Font("Tahoma", Font.ITALIC, 12));
 
         // EVENTS TAB
         JPanel eventsPanel = new JPanel(new BorderLayout());
+        eventsPanel.setBackground(Color.decode("#debee6"));
 
         eventsTable = new JTable();
+        eventsTable.setBackground(Color.decode("#f1ebf2"));
+        eventsTable.setFont(new Font("Tahoma", Font.ITALIC, 12));
+        eventsTable.getTableHeader().setBackground(Color.decode("#debee6"));
+        eventsTable.getTableHeader().setFont(new Font("Tahoma", Font.ITALIC, 12));
         JScrollPane eventScroll = new JScrollPane(eventsTable);
 
         JPanel eventBtns = new JPanel();
+        eventBtns.setBackground(Color.decode("#debee6"));
         registerBtn = new JButton("Register");
+        styleButton(registerBtn);
         refreshEventsBtn = new JButton("Refresh");
+        styleButton(refreshEventsBtn);
         eventBtns.add(registerBtn);
         eventBtns.add(refreshEventsBtn);
 
@@ -39,32 +50,53 @@ public class AttendeeDashboardFrame extends JFrame {
 
         // TICKETS TAB
         JPanel ticketsPanel = new JPanel(new BorderLayout());
+        ticketsPanel.setBackground(Color.decode("#debee6"));
 
         ticketsTable = new JTable();
+        ticketsTable.setBackground(Color.decode("#f1ebf2"));
+        ticketsTable.setFont(new Font("Tahoma", Font.ITALIC, 12));
+        ticketsTable.getTableHeader().setBackground(Color.decode("#debee6"));
+        ticketsTable.getTableHeader().setFont(new Font("Tahoma", Font.ITALIC, 12));
         JScrollPane ticketsScroll = new JScrollPane(ticketsTable);
 
         JPanel ticketBtns = new JPanel();
+        ticketBtns.setBackground(Color.decode("#debee6"));
         cancelBtn = new JButton("Cancel Registration");
+        styleButton(cancelBtn);
         refreshTicketsBtn = new JButton("Refresh");
-        viewTicketBtn = new JButton("View Ticket");  // ← زر جديد
+        styleButton(refreshTicketsBtn);
+        viewTicketBtn = new JButton("View Ticket");
+        styleButton(viewTicketBtn);
 
         ticketBtns.add(cancelBtn);
         ticketBtns.add(refreshTicketsBtn);
-        ticketBtns.add(viewTicketBtn); // ← إضافة الزر
+        ticketBtns.add(viewTicketBtn);
 
         ticketsPanel.add(ticketsScroll, BorderLayout.CENTER);
         ticketsPanel.add(ticketBtns, BorderLayout.SOUTH);
 
         tabs.add("My Tickets", ticketsPanel);
 
-        add(tabs);
+        // LOGOUT BUTTON
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(Color.decode("#debee6"));
+        logoutBtn = new JButton("Logout");
+        styleButton(logoutBtn);
+        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        logoutPanel.setBackground(Color.decode("#debee6"));
+        logoutPanel.add(logoutBtn);
+        topPanel.add(logoutPanel, BorderLayout.NORTH);
+        topPanel.add(tabs, BorderLayout.CENTER);
+
+        add(topPanel);
 
         // ACTIONS
         registerBtn.addActionListener(e -> registerForEvent());
         cancelBtn.addActionListener(e -> cancelRegistration());
         refreshEventsBtn.addActionListener(e -> loadEvents());
         refreshTicketsBtn.addActionListener(e -> loadTickets());
-        viewTicketBtn.addActionListener(e -> showTicketDetails());  // ← الأكشن الجديد
+        viewTicketBtn.addActionListener(e -> showTicketDetails());
+        logoutBtn.addActionListener(e -> logout());
 
         loadEvents();
         loadTickets();
@@ -73,9 +105,22 @@ public class AttendeeDashboardFrame extends JFrame {
         setVisible(true);
     }
 
-    // -------------------------
-    // LOAD AVAILABLE EVENTS
-    // -------------------------
+    private void styleButton(JButton btn) {
+        btn.setBackground(Color.decode("#f1ebf2"));
+        btn.setFont(new Font("Tahoma", Font.ITALIC, 12));
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to logout?",
+                "Logout Confirmation",
+                JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            new Log_sginup();
+            dispose();
+        }
+    }
+
     private void loadEvents() {
 
         DefaultTableModel model = new DefaultTableModel(
@@ -116,9 +161,6 @@ public class AttendeeDashboardFrame extends JFrame {
         }
     }
 
-    // -------------------------
-    // REGISTER FOR EVENT + TICKET GENERATION
-    // -------------------------
     private void registerForEvent() {
 
         int row = eventsTable.getSelectedRow();
@@ -144,7 +186,6 @@ public class AttendeeDashboardFrame extends JFrame {
             return;
         }
 
-        // Check duplicate
         String checkSql = "SELECT * FROM registrations WHERE user_id = ? AND event_id = ?";
 
         try (Connection con = DBConnection.getConnection();
@@ -185,7 +226,6 @@ public class AttendeeDashboardFrame extends JFrame {
 
         try (Connection con = DBConnection.getConnection()) {
 
-            // 1) INSERT REGISTRATION
             PreparedStatement regPs = con.prepareStatement(
                     "INSERT INTO registrations (event_id, user_id, status) VALUES (?, ?, 'REGISTERED')",
                     Statement.RETURN_GENERATED_KEYS
@@ -199,10 +239,8 @@ public class AttendeeDashboardFrame extends JFrame {
             regKeys.next();
             int registrationId = regKeys.getInt(1);
 
-            // 2) GENERATE TICKET CODE
             String ticketId = "TCK-" + registrationId + "-" + System.currentTimeMillis();
 
-            // 3) INSERT TICKET
             PreparedStatement ticketPs = con.prepareStatement(
                     "INSERT INTO tickets (registration_id, ticket_code, status) VALUES (?, ?, 'ACTIVE')"
             );
@@ -211,7 +249,6 @@ public class AttendeeDashboardFrame extends JFrame {
             ticketPs.setString(2, ticketId);
             ticketPs.executeUpdate();
 
-            // 4) NOTIFICATION
             JOptionPane.showMessageDialog(
                     this,
                     "Registration Successful!\nYour Ticket ID:\n" + ticketId,
@@ -230,9 +267,6 @@ public class AttendeeDashboardFrame extends JFrame {
         }
     }
 
-    // -------------------------
-    // LOAD USER TICKETS
-    // -------------------------
     private void loadTickets() {
 
         DefaultTableModel model = new DefaultTableModel(
@@ -271,9 +305,6 @@ public class AttendeeDashboardFrame extends JFrame {
         }
     }
 
-    // -------------------------
-    // CANCEL REGISTRATION
-    // -------------------------
     private void cancelRegistration() {
 
         int row = ticketsTable.getSelectedRow();
@@ -327,9 +358,6 @@ public class AttendeeDashboardFrame extends JFrame {
         }
     }
 
-    // -------------------------
-    // VIEW TICKET DETAILS (NEW)
-    // -------------------------
     private void showTicketDetails() {
 
         int row = ticketsTable.getSelectedRow();

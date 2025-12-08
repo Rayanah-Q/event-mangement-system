@@ -10,7 +10,7 @@ public class AdminDashboardFrame extends JFrame {
 
     private JTable eventTable, userTable;
     private JButton refreshEventsBtn, addEventBtn, deleteEventBtn;
-    private JButton refreshUsersBtn, addOrganizerBtn, deleteUserBtn;
+    private JButton refreshUsersBtn, addOrganizerBtn, deleteUserBtn, logoutBtn;
     private JTextArea reportArea;
 
     public AdminDashboardFrame() {
@@ -18,18 +18,30 @@ public class AdminDashboardFrame extends JFrame {
         setTitle("Admin Dashboard");
         setSize(950, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        getContentPane().setBackground(Color.decode("#debee6"));
 
         JTabbedPane tabs = new JTabbedPane();
+        tabs.setBackground(Color.decode("#debee6"));
+        tabs.setFont(new Font("Tahoma", Font.ITALIC, 12));
 
-        // EVENTS TAB -------------------------------------------------------
+        // EVENTS TAB
         JPanel eventsPanel = new JPanel(new BorderLayout());
+        eventsPanel.setBackground(Color.decode("#debee6"));
         eventTable = new JTable();
+        eventTable.setBackground(Color.decode("#f1ebf2"));
+        eventTable.setFont(new Font("Tahoma", Font.ITALIC, 12));
+        eventTable.getTableHeader().setBackground(Color.decode("#debee6"));
+        eventTable.getTableHeader().setFont(new Font("Tahoma", Font.ITALIC, 12));
         JScrollPane eventScroll = new JScrollPane(eventTable);
 
         JPanel eventBtns = new JPanel();
+        eventBtns.setBackground(Color.decode("#debee6"));
         refreshEventsBtn = new JButton("Refresh Events");
+        styleButton(refreshEventsBtn);
         addEventBtn = new JButton("Add Event");
+        styleButton(addEventBtn);
         deleteEventBtn = new JButton("Delete Event");
+        styleButton(deleteEventBtn);
 
         eventBtns.add(refreshEventsBtn);
         eventBtns.add(addEventBtn);
@@ -40,15 +52,24 @@ public class AdminDashboardFrame extends JFrame {
 
         tabs.add("Events", eventsPanel);
 
-        // USERS TAB --------------------------------------------------------
+        // USERS TAB
         JPanel usersPanel = new JPanel(new BorderLayout());
+        usersPanel.setBackground(Color.decode("#debee6"));
         userTable = new JTable();
+        userTable.setBackground(Color.decode("#f1ebf2"));
+        userTable.setFont(new Font("Tahoma", Font.ITALIC, 12));
+        userTable.getTableHeader().setBackground(Color.decode("#debee6"));
+        userTable.getTableHeader().setFont(new Font("Tahoma", Font.ITALIC, 12));
         JScrollPane userScroll = new JScrollPane(userTable);
 
         JPanel userBtns = new JPanel();
+        userBtns.setBackground(Color.decode("#debee6"));
         refreshUsersBtn = new JButton("Refresh Users");
+        styleButton(refreshUsersBtn);
         addOrganizerBtn = new JButton("Add Organizer");
+        styleButton(addOrganizerBtn);
         deleteUserBtn = new JButton("Delete User");
+        styleButton(deleteUserBtn);
 
         userBtns.add(refreshUsersBtn);
         userBtns.add(addOrganizerBtn);
@@ -59,23 +80,38 @@ public class AdminDashboardFrame extends JFrame {
 
         tabs.add("Users", usersPanel);
 
-        // REPORTS TAB -----------------------------------------------------
+        // REPORTS TAB
         JPanel reportsPanel = new JPanel(new BorderLayout());
+        reportsPanel.setBackground(Color.decode("#debee6"));
 
         reportArea = new JTextArea();
         reportArea.setEditable(false);
+        reportArea.setBackground(Color.decode("#f1ebf2"));
+        reportArea.setFont(new Font("Tahoma", Font.ITALIC, 12));
         JScrollPane reportScroll = new JScrollPane(reportArea);
 
         JButton generateReportBtn = new JButton("Generate Report");
+        styleButton(generateReportBtn);
 
         reportsPanel.add(reportScroll, BorderLayout.CENTER);
         reportsPanel.add(generateReportBtn, BorderLayout.SOUTH);
 
         tabs.add("Reports", reportsPanel);
 
-        add(tabs);
+        // LOGOUT BUTTON
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(Color.decode("#debee6"));
+        logoutBtn = new JButton("Logout");
+        styleButton(logoutBtn);
+        JPanel logoutPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        logoutPanel.setBackground(Color.decode("#debee6"));
+        logoutPanel.add(logoutBtn);
+        topPanel.add(logoutPanel, BorderLayout.NORTH);
+        topPanel.add(tabs, BorderLayout.CENTER);
 
-        // ACTIONS ---------------------------------------------------------
+        add(topPanel);
+
+        // ACTIONS
         refreshEventsBtn.addActionListener(e -> loadEvents());
         refreshUsersBtn.addActionListener(e -> loadUsers());
         addEventBtn.addActionListener(e -> addEvent());
@@ -83,6 +119,7 @@ public class AdminDashboardFrame extends JFrame {
         deleteUserBtn.addActionListener(e -> deleteUser());
         addOrganizerBtn.addActionListener(e -> addOrganizer());
         generateReportBtn.addActionListener(e -> generateReport());
+        logoutBtn.addActionListener(e -> logout());
 
         loadEvents();
         loadUsers();
@@ -91,9 +128,22 @@ public class AdminDashboardFrame extends JFrame {
         setVisible(true);
     }
 
-    // ================================================================
-    // LOAD EVENTS
-    // ================================================================
+    private void styleButton(JButton btn) {
+        btn.setBackground(Color.decode("#f1ebf2"));
+        btn.setFont(new Font("Tahoma", Font.ITALIC, 12));
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to logout?",
+                "Logout Confirmation",
+                JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            new Log_sginup();
+            dispose();
+        }
+    }
+
     private void loadEvents() {
 
         DefaultTableModel model = new DefaultTableModel(
@@ -124,9 +174,6 @@ public class AdminDashboardFrame extends JFrame {
         }
     }
 
-    // ================================================================
-    // LOAD USERS
-    // ================================================================
     private void loadUsers() {
 
         DefaultTableModel model = new DefaultTableModel(
@@ -153,9 +200,6 @@ public class AdminDashboardFrame extends JFrame {
         }
     }
 
-    // ================================================================
-    // ADD EVENT (Validation)
-    // ================================================================
     private void addEvent() {
 
         String title = JOptionPane.showInputDialog("Event Title:");
@@ -192,7 +236,6 @@ public class AdminDashboardFrame extends JFrame {
             return;
         }
 
-        // validate datetime
         if (!date.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             JOptionPane.showMessageDialog(this, "Invalid date format!");
             return;
@@ -219,9 +262,6 @@ public class AdminDashboardFrame extends JFrame {
         }
     }
 
-    // ================================================================
-    // DELETE EVENT
-    // ================================================================
     private void deleteEvent() {
 
         int row = eventTable.getSelectedRow();
@@ -232,7 +272,6 @@ public class AdminDashboardFrame extends JFrame {
 
         int id = (int) eventTable.getValueAt(row, 0);
 
-        // Check registration
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM registrations WHERE event_id=?")) {
 
@@ -272,9 +311,6 @@ public class AdminDashboardFrame extends JFrame {
         }
     }
 
-    // ================================================================
-    // DELETE USER
-    // ================================================================
     private void deleteUser() {
 
         int row = userTable.getSelectedRow();
@@ -286,7 +322,6 @@ public class AdminDashboardFrame extends JFrame {
         int userId = (int) userTable.getValueAt(row, 0);
         String role = (String) userTable.getValueAt(row, 3);
 
-        // Prevent deleting last admin
         if (role.equalsIgnoreCase("admin")) {
             try (Connection con = DBConnection.getConnection();
                  Statement st = con.createStatement();
@@ -305,7 +340,6 @@ public class AdminDashboardFrame extends JFrame {
             }
         }
 
-        // Prevent deleting user with registrations
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT COUNT(*) FROM registrations WHERE user_id=?")) {
 
@@ -343,9 +377,6 @@ public class AdminDashboardFrame extends JFrame {
         }
     }
 
-    // ================================================================
-    // ADD ORGANIZER (NEW FEATURE)
-    // ================================================================
     private void addOrganizer() {
 
         String fullName = JOptionPane.showInputDialog("Organizer Full Name:");
@@ -376,7 +407,6 @@ public class AdminDashboardFrame extends JFrame {
             return;
         }
 
-        // check email duplicate
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement("SELECT * FROM users WHERE email=?")) {
 
@@ -393,7 +423,6 @@ public class AdminDashboardFrame extends JFrame {
             return;
         }
 
-        // insert organizer
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
                      "INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, 'ORGANIZER')"
@@ -413,10 +442,6 @@ public class AdminDashboardFrame extends JFrame {
         }
     }
 
-
-    // ================================================================
-    // REPORTS
-    // ================================================================
     private void generateReport() {
 
         StringBuilder r = new StringBuilder();
@@ -426,7 +451,6 @@ public class AdminDashboardFrame extends JFrame {
         try (Connection con = DBConnection.getConnection();
              Statement st = con.createStatement()) {
 
-            // users per role
             r.append("Users per Role:\n");
             ResultSet rs1 = st.executeQuery("SELECT role, COUNT(*) AS c FROM users GROUP BY role");
             while (rs1.next()) {
@@ -434,17 +458,14 @@ public class AdminDashboardFrame extends JFrame {
             }
             r.append("\n");
 
-            // total events
             ResultSet rs2 = st.executeQuery("SELECT COUNT(*) AS c FROM events");
             rs2.next();
             r.append("Total Events: " + rs2.getInt("c") + "\n\n");
 
-            // total registrations
             ResultSet rs3 = st.executeQuery("SELECT COUNT(*) AS c FROM registrations");
             rs3.next();
             r.append("Total Registrations: " + rs3.getInt("c") + "\n\n");
 
-            // most popular event
             ResultSet rs4 = st.executeQuery(
                     "SELECT e.title, COUNT(r.registration_id) AS regCount " +
                             "FROM events e LEFT JOIN registrations r ON e.event_id=r.event_id " +
@@ -454,7 +475,6 @@ public class AdminDashboardFrame extends JFrame {
                 r.append("Most Popular Event: " + rs4.getString("title") +
                         " (" + rs4.getInt("regCount") + " registrations)\n\n");
 
-            // most common category
             ResultSet rs5 = st.executeQuery(
                     "SELECT category, COUNT(*) AS c FROM events GROUP BY category ORDER BY c DESC LIMIT 1"
             );
@@ -462,7 +482,6 @@ public class AdminDashboardFrame extends JFrame {
                 r.append("Top Category: " + rs5.getString("category") +
                         " (" + rs5.getInt("c") + " events)\n\n");
 
-            // write file
             try (FileWriter writer = new FileWriter("admin_report.txt")) {
                 writer.write(r.toString());
             }
