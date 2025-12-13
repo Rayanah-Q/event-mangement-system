@@ -11,24 +11,58 @@ public class AttendeeDashboardFrame extends JFrame {
     private JTable eventsTable, ticketsTable;
     private JButton registerBtn, cancelBtn, refreshEventsBtn, refreshTicketsBtn, viewTicketBtn;
 
+    private JComboBox<String> categoryFilter;
+    private JComboBox<String> locationFilter;
+    private JTextField dateFromField, dateToField;
+    private JButton applyFilterBtn;
+
     public AttendeeDashboardFrame(int attendeeId) {
         this.attendeeId = attendeeId;
 
         setTitle("Attendee Dashboard");
-        setSize(900, 600);
+        setSize(950, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JTabbedPane tabs = new JTabbedPane();
 
-        // EVENTS TAB
+
         JPanel eventsPanel = new JPanel(new BorderLayout());
 
+        // --- FILTER PANEL ---
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        categoryFilter = new JComboBox<>();
+        locationFilter = new JComboBox<>();
+        dateFromField = new JTextField(10);
+        dateToField = new JTextField(10);
+        applyFilterBtn = new JButton("Apply Filter");
+
+        loadFilterValues();
+
+        filterPanel.add(new JLabel("Category:"));
+        filterPanel.add(categoryFilter);
+
+        filterPanel.add(new JLabel("Location:"));
+        filterPanel.add(locationFilter);
+
+        filterPanel.add(new JLabel("From:"));
+        filterPanel.add(dateFromField);
+
+        filterPanel.add(new JLabel("To:"));
+        filterPanel.add(dateToField);
+
+        filterPanel.add(applyFilterBtn);
+
+        eventsPanel.add(filterPanel, BorderLayout.NORTH);
+
+        // --- TABLE FOR EVENTS ---
         eventsTable = new JTable();
         JScrollPane eventScroll = new JScrollPane(eventsTable);
 
         JPanel eventBtns = new JPanel();
         registerBtn = new JButton("Register");
         refreshEventsBtn = new JButton("Refresh");
+
         eventBtns.add(registerBtn);
         eventBtns.add(refreshEventsBtn);
 
@@ -37,7 +71,9 @@ public class AttendeeDashboardFrame extends JFrame {
 
         tabs.add("Available Events", eventsPanel);
 
+        // ================================
         // TICKETS TAB
+        // ================================
         JPanel ticketsPanel = new JPanel(new BorderLayout());
 
         ticketsTable = new JTable();
@@ -46,11 +82,11 @@ public class AttendeeDashboardFrame extends JFrame {
         JPanel ticketBtns = new JPanel();
         cancelBtn = new JButton("Cancel Registration");
         refreshTicketsBtn = new JButton("Refresh");
-        viewTicketBtn = new JButton("View Ticket");  // ← زر جديد
+        viewTicketBtn = new JButton("View Ticket");
 
         ticketBtns.add(cancelBtn);
         ticketBtns.add(refreshTicketsBtn);
-        ticketBtns.add(viewTicketBtn); // ← إضافة الزر
+        ticketBtns.add(viewTicketBtn);
 
         ticketsPanel.add(ticketsScroll, BorderLayout.CENTER);
         ticketsPanel.add(ticketBtns, BorderLayout.SOUTH);
@@ -64,7 +100,9 @@ public class AttendeeDashboardFrame extends JFrame {
         cancelBtn.addActionListener(e -> cancelRegistration());
         refreshEventsBtn.addActionListener(e -> loadEvents());
         refreshTicketsBtn.addActionListener(e -> loadTickets());
-        viewTicketBtn.addActionListener(e -> showTicketDetails());  // ← الأكشن الجديد
+        viewTicketBtn.addActionListener(e -> showTicketDetails());
+
+        applyFilterBtn.addActionListener(e -> loadEvents());
 
         loadEvents();
         loadTickets();
@@ -73,9 +111,28 @@ public class AttendeeDashboardFrame extends JFrame {
         setVisible(true);
     }
 
-    // -------------------------
-    // LOAD AVAILABLE EVENTS
-    // -------------------------
+
+    private void loadFilterValues() {
+        categoryFilter.addItem("All");
+        locationFilter.addItem("All");
+
+        try (Connection con = DBConnection.getConnection();
+             Statement st = con.createStatement()) {
+
+            ResultSet rs1 = st.executeQuery("SELECT DISTINCT category FROM events");
+            while (rs1.next())
+                categoryFilter.addItem(rs1.getString(1));
+
+            ResultSet rs2 = st.executeQuery("SELECT DISTINCT location FROM events");
+            while (rs2.next())
+                locationFilter.addItem(rs2.getString(1));
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error loading filters: " + ex.getMessage());
+        }
+    }
+
+
     private void loadEvents() {
 
         DefaultTableModel model = new DefaultTableModel(
@@ -86,7 +143,26 @@ public class AttendeeDashboardFrame extends JFrame {
                 "SELECT e.event_id, e.title, e.category, e.location, e.event_date, " +
                 "       e.seat_capacity, " +
                 "       (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.event_id) AS registeredCount " +
-                "FROM events e ORDER BY e.event_date ASC";
+                "FROM events e WHERE 1=1 ";
+
+        // Apply filters dynamically
+        if (!categoryFilter.getSelectedItem().toString().equals("All")) {
+            sql += " AND e.category = '" + categoryFilter.getSelectedItem() + "'";
+        }
+
+        if (!locationFilter.getSelectedItem().toString().equals("All")) {
+            sql += " AND e.location = '" + locationFilter.getSelectedItem() + "'";
+        }
+
+        if (!dateFromField.getText().trim().isEmpty()) {
+            sql += " AND e.event_date >= '" + dateFromField.getText().trim() + " 00:00:00'";
+        }
+
+        if (!dateToField.getText().trim().isEmpty()) {
+            sql += " AND e.event_date <= '" + dateToField.getText().trim() + " 23:59:59'";
+        }
+
+        sql += " ORDER BY e.event_date ASC";
 
         try (Connection con = DBConnection.getConnection();
              Statement st = con.createStatement();
@@ -107,26 +183,16 @@ public class AttendeeDashboardFrame extends JFrame {
             eventsTable.setModel(model);
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error loading events:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Error loading events: " + ex.getMessage());
         }
     }
 
-    // -------------------------
-    // REGISTER FOR EVENT + TICKET GENERATION
-    // -------------------------
+
     private void registerForEvent() {
 
         int row = eventsTable.getSelectedRow();
         if (row == -1) {
-            JOptionPane.showMessageDialog(this,
-                    "Please select an event first!",
-                    "Warning",
-                    JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Please select an event!");
             return;
         }
 
@@ -135,117 +201,82 @@ public class AttendeeDashboardFrame extends JFrame {
         int registered = (int) eventsTable.getValueAt(row, 6);
 
         if (registered >= capacity) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Sorry, this event is FULL.",
-                    "Registration Failed",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "This event is FULL.");
             return;
         }
 
-        // Check duplicate
-        String checkSql = "SELECT * FROM registrations WHERE user_id = ? AND event_id = ?";
-
+        // Check duplicate registration
         try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(checkSql)) {
+             PreparedStatement check = con.prepareStatement(
+                     "SELECT * FROM registrations WHERE user_id = ? AND event_id = ?")) {
 
-            ps.setInt(1, attendeeId);
-            ps.setInt(2, eventId);
-
-            ResultSet rs = ps.executeQuery();
+            check.setInt(1, attendeeId);
+            check.setInt(2, eventId);
+            ResultSet rs = check.executeQuery();
 
             if (rs.next()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "You are already registered for this event!",
-                        "Duplicate Registration",
-                        JOptionPane.WARNING_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, "You are already registered!");
                 return;
             }
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Error checking registration:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Do you want to register for this event?",
-                "Confirm Registration",
-                JOptionPane.YES_NO_OPTION
-        );
-
-        if (confirm != JOptionPane.YES_OPTION)
-            return;
+        int confirm = JOptionPane.showConfirmDialog(this, "Register for this event?");
+        if (confirm != JOptionPane.YES_OPTION) return;
 
         try (Connection con = DBConnection.getConnection()) {
 
-            // 1) INSERT REGISTRATION
-            PreparedStatement regPs = con.prepareStatement(
+            // Insert registration
+            PreparedStatement reg = con.prepareStatement(
                     "INSERT INTO registrations (event_id, user_id, status) VALUES (?, ?, 'REGISTERED')",
                     Statement.RETURN_GENERATED_KEYS
             );
 
-            regPs.setInt(1, eventId);
-            regPs.setInt(2, attendeeId);
-            regPs.executeUpdate();
+            reg.setInt(1, eventId);
+            reg.setInt(2, attendeeId);
+            reg.executeUpdate();
 
-            ResultSet regKeys = regPs.getGeneratedKeys();
-            regKeys.next();
-            int registrationId = regKeys.getInt(1);
+            ResultSet keys = reg.getGeneratedKeys();
+            keys.next();
+            int regId = keys.getInt(1);
 
-            // 2) GENERATE TICKET CODE
-            String ticketId = "TCK-" + registrationId + "-" + System.currentTimeMillis();
+            // Create ticket
+            String ticketCode = "TCK-" + regId + "-" + System.currentTimeMillis();
 
-            // 3) INSERT TICKET
-            PreparedStatement ticketPs = con.prepareStatement(
+            PreparedStatement t = con.prepareStatement(
                     "INSERT INTO tickets (registration_id, ticket_code, status) VALUES (?, ?, 'ACTIVE')"
             );
 
-            ticketPs.setInt(1, registrationId);
-            ticketPs.setString(2, ticketId);
-            ticketPs.executeUpdate();
+            t.setInt(1, regId);
+            t.setString(2, ticketCode);
+            t.executeUpdate();
 
-            // 4) NOTIFICATION
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Registration Successful!\nYour Ticket ID:\n" + ticketId,
-                    "Ticket Generated",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this,
+                    "Registered Successfully!\nTicket: " + ticketCode);
 
             loadEvents();
             loadTickets();
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Error during registration:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
     }
 
-    // -------------------------
-    // LOAD USER TICKETS
-    // -------------------------
+
     private void loadTickets() {
 
         DefaultTableModel model = new DefaultTableModel(
                 new String[]{"Registration ID", "Event Title", "Date", "Status"}, 0
         );
 
-        String sql =
-                "SELECT r.registration_id, e.title, e.event_date, r.status " +
-                "FROM registrations r JOIN events e ON r.event_id = e.event_id " +
-                "WHERE r.user_id = ? ORDER BY e.event_date";
-
         try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(
+                     "SELECT r.registration_id, e.title, e.event_date, r.status " +
+                     "FROM registrations r JOIN events e ON r.event_id = e.event_id " +
+                     "WHERE r.user_id = ? ORDER BY e.event_date")) {
 
             ps.setInt(1, attendeeId);
             ResultSet rs = ps.executeQuery();
@@ -262,84 +293,45 @@ public class AttendeeDashboardFrame extends JFrame {
             ticketsTable.setModel(model);
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error loading tickets:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Error loading tickets: " + ex.getMessage());
         }
     }
 
-    // -------------------------
-    // CANCEL REGISTRATION
-    // -------------------------
     private void cancelRegistration() {
-
         int row = ticketsTable.getSelectedRow();
         if (row == -1) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Please select a ticket to cancel!",
-                    "Warning",
-                    JOptionPane.WARNING_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Select a ticket first!");
             return;
         }
 
         int regId = (int) ticketsTable.getValueAt(row, 0);
 
-        int confirm = JOptionPane.showConfirmDialog(
-                this,
-                "Are you sure you want to cancel this registration?",
-                "Confirm Cancel",
-                JOptionPane.YES_NO_OPTION
-        );
-
-        if (confirm != JOptionPane.YES_OPTION)
-            return;
+        int confirm = JOptionPane.showConfirmDialog(this, "Cancel this registration?");
+        if (confirm != JOptionPane.YES_OPTION) return;
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(
-                     "DELETE FROM registrations WHERE registration_id = ?"
-             )) {
+                     "DELETE FROM registrations WHERE registration_id = ?")) {
 
             ps.setInt(1, regId);
             ps.executeUpdate();
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Registration canceled!",
-                    "Canceled",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Registration canceled.");
 
             loadTickets();
             loadEvents();
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error canceling registration:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Error canceling: " + ex.getMessage());
         }
     }
 
-    // -------------------------
-    // VIEW TICKET DETAILS (NEW)
-    // -------------------------
+
     private void showTicketDetails() {
 
         int row = ticketsTable.getSelectedRow();
         if (row == -1) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Please select a ticket to view!",
-                    "Warning",
-                    JOptionPane.WARNING_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Select a ticket!");
             return;
         }
 
@@ -360,32 +352,21 @@ public class AttendeeDashboardFrame extends JFrame {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-
-                String info =
+                String msg =
                         "------ EVENT TICKET ------\n\n" +
                         "Event: " + rs.getString("title") + "\n" +
                         "Category: " + rs.getString("category") + "\n" +
                         "Location: " + rs.getString("location") + "\n" +
                         "Date: " + rs.getString("event_date") + "\n\n" +
                         "Ticket ID:\n" + rs.getString("ticket_code") + "\n\n" +
-                        "Status: " + rs.getString("status") + "\n" +
-                        "--------------------------";
+                        "Status: " + rs.getString("status");
 
-                JOptionPane.showMessageDialog(
-                        this,
-                        info,
-                        "Ticket Details",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, msg,
+                        "Ticket Details", JOptionPane.INFORMATION_MESSAGE);
             }
 
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error loading ticket details:\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(this, "Error loading ticket: " + ex.getMessage());
         }
     }
 }
