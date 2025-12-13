@@ -42,7 +42,7 @@ CREATE TABLE `events` (
 
 LOCK TABLES `events` WRITE;
 /*!40000 ALTER TABLE `events` DISABLE KEYS */;
-INSERT INTO `events` VALUES (1,'Java Workshop','Workshop','Riyadh','2025-01-25 18:00:00',30,2),(2,'AI Seminar','Seminar','Jeddah','2025-02-10 16:00:00',50,3),(3,'Music Concert','Concert','Dammam','2025-03-05 20:00:00',100,4),(4,'Tech Meetup','Other','Riyadh','2025-01-15 19:30:00',40,2);
+INSERT INTO `events` VALUES (1,'Absher Tuwaiq Hackathon','Hackathon','Riyadh','2025-12-11 09:00:00.00',450,2),(2,'Buraidah Dates Carnival','Agricultural Festival','Buraidah','2026-8-01 12:00:00.00',1000,3),(3,'LEAP 26','Tech confrence','Riyadh','2026-04-13 14:00:00.00',1500,4),(4,'Red Sea International Film Festival','Film event','Jeddah','2025-12-04 15:00:00.00',500,2);
 /*!40000 ALTER TABLE `events` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -142,3 +142,4 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-12-01 18:29:03
+
